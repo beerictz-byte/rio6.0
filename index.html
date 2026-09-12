@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>העוזר האישי שלי</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-glass: rgba(30, 41, 59, 0.7);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.4);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Rubik', sans-serif; }
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .header {
+            padding: 16px 20px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+        .header h1 { font-size: 1.2rem; font-weight: 500; }
+        .header-actions button {
+            background: none; border: none; color: var(--text-secondary);
+            font-size: 1.2rem; cursor: pointer; margin-left: 15px; transition: 0.3s;
+        }
+        .header-actions button:hover { color: var(--accent); }
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scroll-behavior: smooth;
+        }
+        .chat-container::-webkit-scrollbar { width: 6px; }
+        .chat-container::-webkit-scrollbar-thumb { background: var(--bg-secondary); border-radius: 10px; }
+        .message {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.5;
+            animation: fadeIn 0.4s ease-out;
+            word-wrap: break-word;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .user-msg {
+            align-self: flex-end;
+            background: var(--accent);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .ai-msg {
+            align-self: flex-start;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
+        .ai-msg img { max-width: 100%; border-radius: 12px; margin-top: 8px; }
+        .typing-indicator {
+            display: flex; gap: 4px; padding: 12px 16px; align-self: flex-start;
+            background: var(--bg-secondary); border-radius: 18px;
+        }
+        .typing-indicator span {
+            width: 8px; height: 8px; background: var(--text-secondary); border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        .input-area {
+            padding: 16px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        .input-wrapper {
+            flex: 1;
+            background: var(--bg-secondary);
+            border-radius: 24px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid transparent;
+            transition: 0.3s;
+        }
+        .input-wrapper:focus-within { border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
+        #user-input {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 1rem;
+            resize: none;
+            max-height: 100px;
+        }
+        .action-btn {
+            background: none; border: none; color: var(--text-secondary);
+            font-size: 1.2rem; cursor: pointer; transition: 0.3s;
+        }
+        .action-btn:hover { color: var(--accent); }
+        #send-btn {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: var(--accent); border: none; color: white;
+            font-size: 1.2rem; cursor: pointer; transition: 0.3s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #send-btn:hover { transform: scale(1.05); box-shadow: 0 0 20px var(--accent-glow); }
+        #send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .image-preview {
+            position: relative; display: none; margin-bottom: 10px;
+        }
+        .image-preview img {
+            height: 60px; border-radius: 12px; border: 2px solid var(--accent);
+        }
+        .image-preview .remove-img {
+            position: absolute; top: -5px; right: -5px;
+            background: red; color: white; border: none; border-radius: 50%;
+            width: 20px; height: 20px; font-size: 10px; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><i class="fas fa-robot"></i> העוזר האישי</h1>
+        <div class="header-actions">
+            <button id="location-btn" title="קבל מזג אוויר"><i class="fas fa-location-crosshairs"></i></button>
+            <button id="clear-btn" title="נקה צ'אט"><i class="fas fa-trash"></i></button>
+        </div>
+    </div>
+    <div class="chat-container" id="chat-container">
+        <div class="message ai-msg">שלום! אני העוזר האישי שלך. איך אני יכול לעזור לך היום? (אפשר גם לצרף תמונות!)</div>
+    </div>
+    <div class="input-area">
+        <div style="flex: 1; display: flex; flex-direction: column;">
+            <div class="image-preview" id="image-preview">
+                <img id="preview-img" src="" alt="preview">
+                <button class="remove-img" id="remove-img"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="input-wrapper">
+                <label for="image-input" class="action-btn"><i class="fas fa-image"></i></label>
+                <input type="file" id="image-input" accept="image/*" hidden>
+                <textarea id="user-input" rows="1" placeholder="כתוב הודעה..."></textarea>
+            </div>
+        </div>
+        <button id="send-btn"><i class="fas fa-paper-plane"></i></button>
+    </div>
+    <script>
+        const GEMINI_API_KEY = "AQ.Ab8RN6IY5odu_mmv9a-AytgJTlPe8nquXz3CVamCZ9FuU2t7Iw";
+        const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + GEMINI_API_KEY;
+
+        let chatHistory = [];
+        let currentImageBase64 = null;
+        let currentImageMime = null;
+        let weatherContext = "";
+
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const imageInput = document.getElementById('image-input');
+        const imagePreview = document.getElementById('image-preview');
+        const previewImg = document.getElementById('preview-img');
+        const removeImgBtn = document.getElementById('remove-img');
+        const locationBtn = document.getElementById('location-btn');
+        const clearBtn = document.getElementById('clear-btn');
+
+        userInput.addEventListener('input', function() {
+            userInput.style.height = 'auto';
+            userInput.style.height = userInput.scrollHeight + 'px';
+        });
+
+        userInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        sendBtn.addEventListener('click', sendMessage);
+
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    currentImageBase64 = event.target.result.split(',')[1];
+                    currentImageMime = file.type;
+                    previewImg.src = event.target.result;
+                    imagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        removeImgBtn.addEventListener('click', function() {
+            currentImageBase64 = null;
+            currentImageMime = null;
+            imagePreview.style.display = 'none';
+            imageInput.value = '';
+        });
+
+        clearBtn.addEventListener('click', function() {
+            chatHistory = [];
+            chatContainer.innerHTML = '<div class="message ai-msg">הצ\'אט נוקה. איך נוכל להתחיל מחדש?</div>';
+        });
+
+        locationBtn.addEventListener('click', function() {
+            if (!navigator.geolocation) {
+                addMessage("הדפדפן שלך לא תומך במיקום.", "ai");
+                return;
+            }
+            addMessage("מאתר את המיקום שלך...", "ai");
+            navigator.geolocation.getCurrentPosition(async function(pos) {
+                const latitude = pos.coords.latitude;
+                const longitude = pos.coords.longitude;
+                try {
+                    const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=" + latitude + "&longitude=" + longitude + "&current=temperature_2m,weather_code,wind_speed_10m");
+                    const data = await res.json();
+                    const temp = data.current.temperature_2m;
+                    const wind = data.current.wind_speed_10m;
+                    weatherContext = "מזג האוויר הנוכחי של המשתמש: טמפרטורה " + temp + " מעלות צלזיוס, מהירות רוח " + wind + " קמ\"ש.";
+                    addMessage("קלטתי את המיקום! " + weatherContext + " אפשר לשאול אותי שאלות על מזג האוויר.", "ai");
+                } catch (err) {
+                    addMessage("שגיאה בקבלת מזג האוויר.", "ai");
+                }
+            }, function() {
+                addMessage("לא אישרת מיקום. כדי לקבל מזג אוויר, צריך לאשר הרשאה.", "ai");
+            });
+        });
+
+        function addMessage(text, sender, imageUrl) {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message');
+            msgDiv.classList.add(sender === 'user' ? 'user-msg' : 'ai-msg');
+            msgDiv.textContent = text;
+            if (imageUrl) {
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                msgDiv.appendChild(img);
+            }
+            chatContainer.appendChild(msgDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return msgDiv;
+        }
+
+        function showTyping() {
+            const typingDiv = document.createElement('div');
+            typingDiv.classList.add('typing-indicator');
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerHTML = '<span></span><span></span><span></span>';
+            chatContainer.appendChild(typingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function hideTyping() {
+            const typing = document.getElementById('typing-indicator');
+            if (typing) typing.remove();
+        }
+
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if (!text && !currentImageBase64) return;
+
+            const userImgUrl = currentImageBase64 ? "data:" + currentImageMime + ";base64," + currentImageBase64 : null;
+            addMessage(text || "(תמונה)", "user", userImgUrl);
+
+            userInput.value = '';
+            userInput.style.height = 'auto';
+            sendBtn.disabled = true;
+
+            showTyping();
+
+            const parts = [];
+            if (text) {
+                parts.push({ text: text });
+            }
+            if (currentImageBase64) {
+                parts.push({
+                    inlineData: {
+                        mimeType: currentImageMime,
+                        data: currentImageBase64
+                    }
+                });
+            }
+
+            let systemInstruction = "";
+            if (weatherContext) {
+                systemInstruction = "הקשר נוסף למשתמש: " + weatherContext + ". אם הוא שואל על מזג האוויר, השתמש בנתון הזה.";
+            }
+
+            const payload = {
+                contents: [{ parts: parts }]
+            };
+
+            if (systemInstruction) {
+                payload.systemInstruction = { parts: [{ text: systemInstruction }] };
+            }
+
+            try {
+                const response = await fetch(GEMINI_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                hideTyping();
+
+                if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text) {
+                    const aiText = data.candidates[0].content.parts[0].text;
+                    addMessage(aiText, "ai");
+                    chatHistory.push({ role: "user", parts: parts });
+                    chatHistory.push({ role: "model", parts: [{ text: aiText }] });
+                } else {
+                    let errorMsg = "מצטער, קרתה שגיאה.";
+                    if (data.error && data.error.message) {
+                        errorMsg += " פרטים: " + data.error.message;
+                    }
+                    addMessage(errorMsg, "ai");
+                }
+            } catch (error) {
+                hideTyping();
+                addMessage("שגיאת תקשורת. בדוק את המפתח API או את החיבור לאינטרנט.", "ai");
+                console.error(error);
+            }
+
+            removeImgBtn.click();
+            sendBtn.disabled = false;
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
